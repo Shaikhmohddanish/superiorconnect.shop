@@ -29,6 +29,8 @@
     });
 
     $(window).on('scroll', function(){
+      var timeline = $('#vertical-scrollable-timeline li');
+      if (timeline.length === 0) return;
       function isScrollIntoView(elem, index) {
         var docViewTop = $(window).scrollTop();
         var docViewBottom = docViewTop + $(window).height();
@@ -41,10 +43,11 @@
           $(elem).removeClass('active');
         }
         var MainTimelineContainer = $('#vertical-scrollable-timeline')[0];
-        var MainTimelineContainerBottom = MainTimelineContainer.getBoundingClientRect().bottom - $(window).height()*.5;
-        $(MainTimelineContainer).find('.inner').css('height',MainTimelineContainerBottom+'px');
+        if (MainTimelineContainer) {
+          var MainTimelineContainerBottom = MainTimelineContainer.getBoundingClientRect().bottom - $(window).height()*.5;
+          $(MainTimelineContainer).find('.inner').css('height',MainTimelineContainerBottom+'px');
+        }
       }
-      var timeline = $('#vertical-scrollable-timeline li');
       Array.from(timeline).forEach(isScrollIntoView);
     });
   
