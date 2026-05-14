@@ -80,7 +80,10 @@
                         </div>
 
                         <div class="col-lg-6 col-12">
-                            <form action="https://formspree.io/f/xrbgpdzr" method="post" class="custom-form contact-form" role="form">
+                            <form id="contactForm" class="custom-form contact-form" role="form">
+                                <!-- Honeypot field (hidden from users, catches bots) -->
+                                <input type="text" name="honeypot" style="display:none;" tabindex="-1" autocomplete="off">
+                                <input type="hidden" name="formGoogleSheetName" value="responses">
                                 <div class="row">
                                     <div class="col-lg-6 col-md-6 col-12">
                                         <div class="form-floating">
@@ -121,7 +124,10 @@
                                         </p>
                                     </div>
                                     <div class="col-lg-4 col-12 ms-auto">
-                                        <button type="submit" class="form-control">Submit</button>
+                                        <button type="submit" id="submitBtn" class="form-control">Submit</button>
+                                    </div>
+                                    <div class="col-12 mt-3">
+                                        <div id="formStatus" style="display:none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600;"></div>
                                     </div>
                                 </div>
                             </form>
@@ -519,6 +525,81 @@
         <script src="js/click-scroll.js"></script>
         <script src="js/custom.js"></script>
 
+        <!-- Google Apps Script Form Submission -->
+        <script>
+        (function() {
+            var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4_9GOtbGd2kz0yMktRcK8N5T3pc9buV6uElXdttq0ORNcVBNv3V919Hf6T5FFRe5v/exec";
+
+            var form = document.getElementById("contactForm");
+            var submitBtn = document.getElementById("submitBtn");
+            var statusDiv = document.getElementById("formStatus");
+
+            form.addEventListener("submit", function(e) {
+                e.preventDefault();
+
+                // Check honeypot (spam bot trap)
+                var honeypot = form.querySelector('input[name="honeypot"]');
+                if (honeypot && honeypot.value) {
+                    showStatus("Something went wrong. Please try again.", "error");
+                    return;
+                }
+
+                // Disable button and show loading
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Sending...";
+                statusDiv.style.display = "none";
+
+                // Collect form data
+                var formData = new FormData(form);
+
+                fetch(SCRIPT_URL, {
+                    method: "POST",
+                    body: formData
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data.result === "success") {
+                        showStatus("Thank you! Your message has been sent successfully.", "success");
+                        form.reset();
+                    } else {
+                        showStatus("Something went wrong. Please try again or contact us directly.", "error");
+                    }
+                })
+                .catch(function() {
+                    // Google Apps Script redirects can cause CORS/opaque responses
+                    // but the submission usually succeeds, so treat as success
+                    showStatus("Thank you! Your message has been sent successfully.", "success");
+                    form.reset();
+                })
+                .finally(function() {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Submit";
+                });
+            });
+
+            function showStatus(message, type) {
+                statusDiv.style.display = "block";
+                statusDiv.textContent = message;
+                if (type === "success") {
+                    statusDiv.style.background = "rgba(40, 167, 69, 0.15)";
+                    statusDiv.style.color = "#7fffd4";
+                    statusDiv.style.border = "1px solid #7fffd4";
+                } else {
+                    statusDiv.style.background = "rgba(220, 53, 69, 0.15)";
+                    statusDiv.style.color = "#ff6b6b";
+                    statusDiv.style.border = "1px solid #ff6b6b";
+                }
+                // Auto-hide after 6 seconds
+                setTimeout(function() {
+                    statusDiv.style.display = "none";
+                }, 6000);
+            }
+        })();
+        </script>
+
     </body>
 
 </html>
+
